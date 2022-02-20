@@ -36,7 +36,9 @@ class RMod:
         Run through all the placers in placer_list and create them in the scene.
         '''
 
-        print("Creating Placers...")
+        for placer in self.placer_list:
+            new_placer = create_placer(pos=placer[0], size=placer[1], name=placer[2], colour=[3])
+            print("Created {}.".format(new_placer))
 
         return
 
@@ -96,6 +98,31 @@ class Limb(RMod):
         self.hinge_joint = None
         self.end_joint = None
 
+        return
+
+
+class Arm(Limb):
+    def __init__(self):
+        '''
+        The least most complicated limb that is still acceptable in the rigging world--
+        FK/IK switch, cleanly placed pole-vector, nothing else.
+        '''
+        super().__init__()
+
+        self.placer_list = [
+            ((1.0, 5.0, 0.0), 10, 'base_joint', 'orange'),
+            ((1.5, 4.0, 0.0), 8, 'hinge_joint', 'orange'),
+            ((2.0, 3.0, 0.0), 10, 'end_joint', 'orange'),
+        ]
+
+        # Reverse this if it's a righty
+        if('r' in self.side_prefix.lower()):
+            for placer in self.placer_list:
+                # index 0 is the positional 
+                placer[0][0] *= -1
+
+        return
+
 
 def create_placer( pos=(0.0, 0.0, 0.0), size=10, name='RigIdPlacer', colour='blue'):
     '''
@@ -111,11 +138,11 @@ def create_placer( pos=(0.0, 0.0, 0.0), size=10, name='RigIdPlacer', colour='blu
 
     # "Placers are nurbs spheres with colour override.  These are intended 
     # basically as locators, but more clickable and visible."
-    print ("Creating a placer named {}...").format(name)
+    print ("Creating a placer named {}...".format(name))
 
     # Nurbs sphere placer is created and moved to the coords passed.
     new_placer = pm.sphere(polygon=0, radius=size, name=name)[0]
-    print ("Moving nurbs sphere.")
+    print ("Moving nurbs sphere to {}".format(pos))
     pm.move(pos, new_placer)
 
     # Disconnect the initial Shader
@@ -132,6 +159,6 @@ def create_placer( pos=(0.0, 0.0, 0.0), size=10, name='RigIdPlacer', colour='blu
     # Set up colour override
     cl.change_colour(new_placer, colour)
 
-    print ("{} has been created.").format(new_placer)
+    print ("{} has been created.".format(new_placer))
 
     return new_placer
