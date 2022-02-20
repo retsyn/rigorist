@@ -11,6 +11,7 @@ The intent is to have a class instance that always has two build phases, one for
 for construction.
 '''
 
+from sqlite3 import connect
 import pymel.core as pm
 from . import colour as cl
 
@@ -37,7 +38,9 @@ class RMod:
         '''
 
         for placer in self.placer_list:
-            new_placer = create_placer(pos=placer[0], size=placer[1], name=placer[2], colour=[3])
+            new_placer = create_placer(
+                pos=placer[0], size=placer[1], name=placer[2], colour=placer[3]
+                )
             print("Created {}.".format(new_placer))
 
         return
@@ -88,9 +91,9 @@ class Limb(RMod):
         super().__init__()
 
         self.placer_list = [
-            ((0.0, 3.0, 0.0), 10, 'base_joint', 'orange'),
-            ((0.0, 2.0, 0.0), 8, 'hinge_joint', 'orange'),
-            ((0.0, 1.0, 0.0), 10, 'end_joint', 'orange'),
+            ((0.0, 3.0, 0.0), 1, 'base_joint', 'orange'),
+            ((0.0, 2.0, 0.0), 0.8, 'hinge_joint', 'orange'),
+            ((0.0, 1.0, 0.0), 1, 'end_joint', 'orange'),
         ]
 
         # Get membership for the essential joints of a parent joint.
@@ -110,9 +113,9 @@ class Arm(Limb):
         super().__init__()
 
         self.placer_list = [
-            ((1.0, 5.0, 0.0), 10, 'base_joint', 'orange'),
-            ((1.5, 4.0, 0.0), 8, 'hinge_joint', 'orange'),
-            ((2.0, 3.0, 0.0), 10, 'end_joint', 'orange'),
+            ((20.0, 175.0, 0.0), 1, 'shoulder_joint', 'orange'),
+            ((28.0, 145.0, 0.0), 0.8, 'elbow_joint', 'orange'),
+            ((38.0, 115, 0.0), 1, 'wrist_joint', 'orange'),
         ]
 
         # Reverse this if it's a righty
@@ -124,7 +127,7 @@ class Arm(Limb):
         return
 
 
-def create_placer( pos=(0.0, 0.0, 0.0), size=10, name='RigIdPlacer', colour='blue'):
+def create_placer( pos=(0.0, 0.0, 0.0), size=1, name='RigoristPlacer', colour='blue'):
     '''
     create_placer
     Makes a nice way to visualize a placer that stands out.
@@ -143,22 +146,14 @@ def create_placer( pos=(0.0, 0.0, 0.0), size=10, name='RigIdPlacer', colour='blu
     # Nurbs sphere placer is created and moved to the coords passed.
     new_placer = pm.sphere(polygon=0, radius=size, name=name)[0]
     print ("Moving nurbs sphere to {}".format(pos))
-    pm.move(pos, new_placer)
+    pm.move(new_placer, pos)
 
     # Disconnect the initial Shader
     initial_shader_grp = pm.PyNode('initialShadingGroup')
-
-    try:
-        pm.disconnectAttr
-        (new_placer.getShape().instObjGroups[0], 
-        initial_shader_grp.dagSetMembers[0]
-        )
-    except:
-        print ("Tried to disconnected initial_shader.grp, it was already gone.")
+    pm.disconnectAttr(new_placer.getShape().instObjGroups[0], 
+        initial_shader_grp.dagSetMembers, na=True)
 
     # Set up colour override
     cl.change_colour(new_placer, colour)
-
-    print ("{} has been created.".format(new_placer))
 
     return new_placer
