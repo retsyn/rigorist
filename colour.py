@@ -1,3 +1,9 @@
+# colour.py
+# Created: Tuesday, 25th January 2022 9:54:52 am
+# Matthew Riche
+# Last Modified: Sunday, 27th February 2022 8:58:53 pm
+# Modified By: Matthew Riche
+
 '''
 Utils for changing the colour of things in viewport.
 '''

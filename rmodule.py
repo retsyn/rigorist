@@ -1,7 +1,7 @@
 # rmodule.py
 # Created: Tuesday, 25th January 2022 9:48:58 am
 # Matthew Riche
-# Last Modified: Friday, 18th February 2022 9:08:08 pm
+# Last Modified: Sunday, 27th February 2022 8:58:33 pm
 # Modified By: Matthew Riche
 
 '''
@@ -11,12 +11,11 @@ The intent is to have a class instance that always has two build phases, one for
 for construction.
 '''
 
-from sqlite3 import connect
 import pymel.core as pm
-from . import colour as cl
+from . placer import *
 
 class RMod:
-    def __init__(self, name="C_Generic_RModule", dir_prefix=''):
+    def __init__(self, name="C_Generic_RModule", dir_prefix='', mirror=False):
         '''
         Generic module.  Each one will know where it's placers should go, and have a rather 
         vanilla build-script
@@ -42,11 +41,13 @@ class RMod:
         Since the placer list can be user-made, verify that it's built correctly.
         '''
 
-        print("Verifying that {} placers have complete data...".format(len(self.placer_list)))
+        print("Verifying that {} entries have complete data...".format(len(self.placer_list)))
 
         correct = True
         # Check for types in order:
         for placer in self.placer_list:
+            if(placer[0] == 'link'):
+                continue
             if(len(placer) < 5):
                 print("The placer {} is missing some data.".format(placer[2]))
                 correct = False
@@ -81,25 +82,38 @@ class RMod:
 
         self._verify_placers()
 
+        # Prep place holders for link-targets
+        link_targets = [None, None]
+
         for placer in self.placer_list:
 
-            build_pos = placer[0]
+            # If it's not a link, it's a placer.
+            if(placer[0] != 'link'):
+                build_pos = placer[0]
 
-            for axis in self.reverse_axis:
-                if(axis == 'x'):
-                    build_pos = (placer[0][0] * -1, placer[0][1], placer[0][2])
-                elif(axis == 'y'):
-                    build_pos = (placer[0][1], placer[0][1] * -1, placer[0][2])
-                elif(axis == 'z'):
-                    build_pos = (placer[0][1], placer[0][1], placer[0][2] * -1)
-                else:
-                    build_pos = placer[0]
+                for axis in self.reverse_axis:
+                    if(axis == 'x'):
+                        build_pos = (placer[0][0] * -1, placer[0][1], placer[0][2])
+                    elif(axis == 'y'):
+                        build_pos = (placer[0][1], placer[0][1] * -1, placer[0][2])
+                    elif(axis == 'z'):
+                        build_pos = (placer[0][1], placer[0][1], placer[0][2] * -1)
+                    else:
+                        build_pos = placer[0]
 
-            new_placer = create_placer(
-                pos=build_pos, size=placer[1], name=(self.side_prefix + placer[2] + '_plc'), colour=placer[3]
-                )
-            print("Created {}.".format(new_placer))
-            self.placer_nodes[placer[4]] = new_placer
+                new_placer = create_placer(
+                    pos=build_pos, size=placer[1], name=(self.side_prefix + placer[2] + '_plc'), 
+                    colour=placer[3])
+
+                # Make it such that the last two placers are always the link targets.
+                link_targets.pop(0)
+                link_targets.append(new_placer)
+
+                print("Created {}.".format(new_placer))
+                self.placer_nodes[placer[4]] = new_placer
+
+            elif(placer[0] == 'link'):
+                create_link_vis(link_targets[0], link_targets[1], colour=placer[1])
 
         return
 
@@ -155,101 +169,3 @@ class RMod:
             self.dependencies, self.placer_nodes])
 
         return _as_list[i]
-
-
-class Limb(RMod):
-    def __init__(self, name="C_Generic_RModule", dir_prefix=''):
-        '''
-        A generic limb as a base, hinge, and end joint.  For an arm this will be shoulder, elbow,
-        and wrist, and for a leg this will be hip, knee, and ankle.
-        '''
-        super().__init__(name=name, dir_prefix=dir_prefix)
-
-        # The anatomy of these tuples is:
-        #   [0] World Space Position
-        #   [1] World Space Scale.
-        #   [2] The name in the scene.
-        #   [3] The colour (string that matches our colour dict.)
-        #   [4] The key name.
-        # The key name and the scene name being diffent allows for modules that inherit something 
-        # generic like 'limb' and still reference placers correctly while displaying more accurate
-        # names in the viewport.
-
-        self.placer_list = [
-            ((0.0, 3.0, 0.0), 1, 'base_joint', 'orange', 'base'),
-            ((0.0, 2.0, 0.0), 0.8, 'hinge_joint', 'orange', 'hinge'),
-            ((0.0, 1.0, 0.0), 1, 'end_joint', 'orange', 'end'),
-        ]
-
-        # Get membership for the essential joints of a parent joint.
-        self.base_joint = None
-        self.hinge_joint = None
-        self.end_joint = None
-
-        return
-
-    def build_module(self):
-        '''
-        Based upon placers in the scene, begin construction
-        '''
-        super().build_module()
-
-        # Select clear to disallow any automatic parenting
-        pm.select(cl=True)
-
-        self.base_joint = pm.joint(n=(self.side_prefix + self.placer_list[0][2]))
-        self.hinge_joint = pm.joint(n=(self.side_prefix + self.placer_list[1][2]))
-        self.end_joint = pm.joint(n=(self.side_prefix + self.placer_list[2][2]))
-
-        pm.matchTransform(self.base_joint, self.placer_nodes['base'])
-        pm.matchTransform(self.hinge_joint, self.placer_nodes['hinge'])
-        pm.matchTransform(self.end_joint, self.placer_nodes['end'])
-
-
-class Arm(Limb):
-    def __init__(self, name="C_Generic_RModule", dir_prefix=''):
-        '''
-        The least most complicated limb that is still acceptable in the rigging world--
-        FK/IK switch, cleanly placed pole-vector, nothing else.
-        '''
-        super().__init__(name=name, dir_prefix=dir_prefix)
-
-        self.placer_list = [
-            ((20.0, 175.0, 0.0), 1, 'shoulder_joint', 'orange', 'base'),
-            ((28.0, 145.0, 0.0), 0.8, 'elbow_joint', 'orange', 'hinge'),
-            ((38.0, 115, 0.0), 1, 'wrist_joint', 'orange', 'end'),
-        ]
-
-        return
-
-    def build_module(self):
-        super().build_module()
-
-        print("Arm Module built, as child of limb module.")
-
-
-def create_placer( pos=(0.0, 0.0, 0.0), size=1, name='RigoristPlacer', colour='blue'):
-    '''
-    create_placer
-    Makes a nice way to visualize a placer that stands out.
-    
-    USAGE:
-    create_placer( pos, size, name, colour)
-    Arguments taken are the three vectors of the worlds space xform, the 
-    visualized size, a name and a colour. Xform vectors are separate so that the
-    use has the option of leaving one or two out.
-    '''
-
-    # Nurbs sphere placer is created and moved to the coords passed.
-    new_placer = pm.sphere(polygon=0, radius=size, name=name)[0]
-    pm.move(new_placer, pos)
-
-    # Disconnect the initial Shader
-    initial_shader_grp = pm.PyNode('initialShadingGroup')
-    pm.disconnectAttr(new_placer.getShape().instObjGroups[0], 
-        initial_shader_grp.dagSetMembers, na=True)
-
-    # Set up colour override
-    cl.change_colour(new_placer, colour)
-
-    return new_placer
