@@ -13,6 +13,7 @@ for construction.
 
 import pymel.core as pm
 from . placer import *
+from . import orient as ori
 
 class RMod:
     def __init__(self, name="C_Generic_RModule", dir_prefix='', mirror=False):
@@ -25,8 +26,10 @@ class RMod:
         self.side_prefix = (self.name.split('_')[0] + '_')
         self.dir_prefix = dir_prefix
         self.placer_list = [] # Placers identities to be built.
+        self.joint_plan = [] # Dict of joints, their nodes, and their orientation by aim.
         self.dependencies = [] # Modules that must be built first.
         self.placer_nodes = {} # Placers in-scene currently as nodes.
+        self.joint_nodes = {} # Joints in-scene currently as nodes.
         self.build_nodes = [] # Nodes in-scene built by this module.
         self.reverse_axis = [] # Which axis to reverse in the case of mirroring.
 
@@ -113,9 +116,36 @@ class RMod:
                 self.placer_nodes[placer[4]] = new_placer
 
             elif(placer[0] == 'link'):
-                create_link_vis(link_targets[0], link_targets[1], colour=placer[1])
+                # If no target is specified, just do the last two as a shortcut.
+                if(len(placer) == 2):
+                    create_link_vis(link_targets[0], link_targets[1], colour=placer[1])
+                # If a target is specified, it'll be the same string name in [2]
+                elif(len(placer) == 3):
+                    create_link_vis(link_targets[1], 
+                        pm.PyNode(self.side_prefix + placer[2] + '_plc'), 
+                        colour=placer[1])
+                else:
+                    pm.warning("Placer data has 'link' entry but with bad data.")
 
         return
+
+    def build_joints(self):
+        '''
+        Using the self.joint_plan, make joints, orient and parent them according to the data.
+        '''
+
+        for next_joint in self.joint_plan:
+            print("Building {}".format(next_joint))
+            pm.select(cl=True)
+
+            # Create the joint based on the name in the joint plan.
+            new_joint = pm.joint(n=(self.side_prefix + next_joint['name'] + "_joint"))
+            # Move the joint to it's placer in the joint plan.
+            pm.matchTransform(new_joint, pm.PyNode(next_joint['placer'] + '_plc'))
+            # Orient the joint by aiming at a target with a specified up-vector placer.
+            ori.aim_at(new_joint, next_joint['child_plc'], up_object=next_joint['up_plc'], 
+                aim_axis=next_joint['aim_ax'], up_axis=next_joint['up_ax'])
+
 
     def build_module(self):
         '''

@@ -27,15 +27,43 @@ class Limb(RMod):
         # names in the viewport.
 
         self.placer_list = [
+            ((0.0, 3.0, 4.0), 0.4, 'base_axis', 'white', 'base_axis'),
             ((0.0, 3.0, 0.0), 1, 'base_joint', 'orange', 'base'),
+            ('link', 'white'),
             ((0.0, 2.0, 0.0), 0.8, 'hinge_joint', 'orange', 'hinge'),
             ('link', 'white'),
             ((0.0, 1.0, 0.0), 1, 'end_joint', 'orange', 'end'),
             ('link', 'white'),
-            ((0.0, 3.0, 4.0), 0.4, 'base_axis', 'white', 'base_axis'),
-            ((1.0, 2.0, 0.5), 0.8, 'hinge_axis', 'white', 'hinge_axis'),
             ((1.4, 1.4, 0.0), 1, 'end_axis', 'white', 'end_axis'),
+            ('link', 'white'),
+            ((1.4, 1.4, 0.0), 1, 'end_aim', 'white', 'end_aim'),
+            ('link', 'white'),
 
+            ((1.0, 2.0, 0.5), 0.8, 'hinge_axis', 'white', 'hinge_axis'),
+        ]
+
+        self.joint_plan = [
+            {'name':'base', 
+                'placer':'base_axis',
+                'child_plc':'hinge_joint',
+                'up_plc':'base_axis',
+                'aim_ax':1,
+                'up_ax':0 
+                },
+            {'name':'hinge', 
+                'placer':'hinge_joint',
+                'child_plc':'end_joint',
+                'up_plc':'hinge_axis',
+                'aim_ax':1,
+                'up_ax':0 
+                },
+            {'name':'end', 
+                'placer':'end_joint',
+                'child_plc':'end_aim',
+                'up_plc':'end_axis',
+                'aim_ax':1,
+                'up_ax':0 
+                },
         ]
 
         # Get membership for the essential joints of a parent joint.
@@ -83,7 +111,9 @@ class Arm(Limb):
             ('link', 'white'),
             ((20.0, 175.0, 30.0), 0.6, 'shoulder_axis', 'white', 'base_axis'),
             ((48.0, 154.0, 0.0), 0.6, 'elbow_axis', 'white', 'hinge_axis'),
+            ('link', 'white', 'elbow_joint'),
             ((48.0, 154.0, 17.0), 0.6, 'wrist_axis', 'white', 'end_axis'),
+            ('link', 'white', 'wrist_joint')
         ]
 
         return

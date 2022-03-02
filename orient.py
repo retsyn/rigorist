@@ -4,10 +4,26 @@
 # Last Modified: Monday, 28th February 2022 9:48:03 pm
 # Modified By: Matthew Riche
 
+from locale import normalize
 import pymel.core as pm
 import pymel.core.datatypes as dt
 
-def aim_at(subject, target, up_vector=(0.0, 0.0, 1.0), aim_axis=0, up_axis=2):
+
+def get_vector(subject, target):
+    '''
+    Get the vector between two objects
+    '''
+
+    subject_pos = subject.getTranslation(space='world')
+    target_pos = subject.getTranslation(space='world')
+
+    aim_vector = (target_pos - subject_pos)
+    aim_vector.normalize()
+
+    return normalize
+    
+
+def aim_at(subject, target, up_vector=(0.0, 0.0, 1.0), up_object=None, aim_axis=0, up_axis=2):
     '''
     Aims the subject node down the target node, and twists it to the provided up-vector.
     Axis involved are specificially defined as 0-2, for x-z.
@@ -21,11 +37,13 @@ def aim_at(subject, target, up_vector=(0.0, 0.0, 1.0), aim_axis=0, up_axis=2):
     subject_position = subject.getTranslation(space='world')
     target_position = target.getTranslation(space='world')
 
-    aim_vector = target_position - subject_position
-    aim_vector.normalize()
+    aim_vector = get_vector(subject, target)
 
-    up_vector_scoped = dt.Vector(up_vector) # named to separate it from the arg.
-    up_vector_scoped.normalize()
+    if(up_object is None):
+        up_vector_scoped = dt.Vector(up_vector) # named to separate it from the arg.
+        up_vector_scoped.normalize()
+    else:
+        up_vector_scoped = get_vector(subject, up_object)
 
     last_vector = up_vector_scoped.cross(aim_vector)
     last_vector.normalize()
