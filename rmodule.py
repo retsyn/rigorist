@@ -12,8 +12,12 @@ for construction.
 '''
 
 import pymel.core as pm
+import pymel.core.datatypes as dt
 from . placer import *
 from . import orient as ori
+
+import pprint
+
 
 class RMod:
     def __init__(self, name="C_Generic_RModule", dir_prefix='', mirror=False):
@@ -25,8 +29,12 @@ class RMod:
         self.name = name
         self.side_prefix = (self.name.split('_')[0] + '_')
         self.dir_prefix = dir_prefix
-        self.placer_list = [] # Placers identities to be built.
-        self.joint_plan = [] # Dict of joints, their nodes, and their orientation by aim.
+
+        # Using a "plan" dict, we have both placers to be made, and the joints and controls they
+        # make.
+
+        self.plan = {}
+
         self.dependencies = [] # Modules that must be built first.
         self.placer_nodes = {} # Placers in-scene currently as nodes.
         self.joint_nodes = {} # Joints in-scene currently as nodes.
@@ -39,94 +47,35 @@ class RMod:
 
         return
 
-    def _verify_placers(self):
-        '''
-        Since the placer list can be user-made, verify that it's built correctly.
-        '''
-
-        print("Verifying that {} entries have complete data...".format(len(self.placer_list)))
-
-        correct = True
-        # Check for types in order:
-        for placer in self.placer_list:
-            if(placer[0] == 'link'):
-                continue
-            if(len(placer) < 5):
-                print("The placer {} is missing some data.".format(placer[2]))
-                correct = False
-                break
-            if(type(placer[0]) is tuple and
-                type(placer[1] is float) and
-                type(placer[2] is str) and
-                type(placer[3] is str) and
-                type(placer[4] is str)):
-                correct = True
-            else:
-                print("The placer {} has wrongly typed data.".format(placer[2]))
-                correct = False
-                break
-
-        if(correct == False):
-            print("Each placer definition needs four elements:\n[0] A tuple representing world"
-                    "-space position\n[1] A float representing world-space scale.\n[2] A name for "
-                    "the placer node that will be added to the scene.\n[3] A string naming the "
-                    "colour.\n[4] A name for the key-- the key can match the name if there's no"
-                    " inherited placers from a parent module, but should match the keys of the "
-                    "parent module if one exists.")
-            pm.error("Rigorist: The placer definitions lacked the right data.  See script-" 
-                "editor for explanation.")
-        else:
-            return True
-
     def build_placers(self):
         '''
         Run through all the placers in placer_list and create them in the scene.
         '''
 
-        self._verify_placers()
+        pprint.pprint (self.plan)
 
-        # Prep place holders for link-targets
-        link_targets = [None, None]
+        for entry in self.plan:
+            print("Building {}".format(self.plan[entry]['name']))
+            print("Placer is {}".format(self.plan[entry]['placer']))
 
-        for placer in self.placer_list:
+            new_placer = create_placer(pos=(self.plan[entry]['pos']), 
+                size=self.plan[entry]['placer'][0],
+                name=(self.plan[entry]['name'] + '_plc'), 
+                colour=self.plan[entry]['placer'][1]
+                )
 
-            # If it's not a link, it's a placer.
-            if(placer[0] != 'link'):
-                build_pos = placer[0]
-
-                for axis in self.reverse_axis:
-                    if(axis == 'x'):
-                        build_pos = (placer[0][0] * -1, placer[0][1], placer[0][2])
-                    elif(axis == 'y'):
-                        build_pos = (placer[0][1], placer[0][1] * -1, placer[0][2])
-                    elif(axis == 'z'):
-                        build_pos = (placer[0][1], placer[0][1], placer[0][2] * -1)
-                    else:
-                        build_pos = placer[0]
-
-                new_placer = create_placer(
-                    pos=build_pos, size=placer[1], name=(self.side_prefix + placer[2] + '_plc'), 
-                    colour=placer[3])
-
-                # Make it such that the last two placers are always the link targets.
-                link_targets.pop(0)
-                link_targets.append(new_placer)
-
-                print("Created {}.".format(new_placer))
-                self.placer_nodes[placer[4]] = new_placer
-
-            elif(placer[0] == 'link'):
-                # If no target is specified, just do the last two as a shortcut.
-                if(len(placer) == 2):
-                    create_link_vis(link_targets[0], link_targets[1], colour=placer[1])
-                # If a target is specified, it'll be the same string name in [2]
-                elif(len(placer) == 3):
-                    create_link_vis(link_targets[1], 
-                        pm.PyNode(self.side_prefix + placer[2] + '_plc'), 
-                        colour=placer[1])
-                else:
-                    pm.warning("Placer data has 'link' entry but with bad data.")
-
+            # Create the 'up placer' which will define the up-vector when aiming to orient the 
+            # future joint.
+            if(self.plan[entry]['up_plc'] is not None):
+                pos_vec = (dt.Vector(
+                    self.plan[entry]['pos']) + dt.Vector(self.plan[entry]['up_plc']['pos'])
+                    )
+                print(pos_vec)
+                up_placer = create_placer(pos=pos_vec, 
+                    size=self.plan[entry]['up_plc']['size'],
+                    colour=self.plan[entry]['up_plc']['colour'])
+                create_link_vis(new_placer, up_placer, colour='grey')
+    
         return
 
     def build_joints(self):
@@ -135,7 +84,7 @@ class RMod:
         '''
 
         for next_joint in self.joint_plan:
-            print("Building {}".format(next_joint))
+            print("Building {}".format(next_joint['name']))
             pm.select(cl=True)
 
             # Create the joint based on the name in the joint plan.
