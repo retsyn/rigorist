@@ -78,9 +78,13 @@ def create_link_vis(target_a, target_b, colour='white'):
     '''
 
     new_link = pm.curve(d=1, p=[(1, 0, 0,), (-1,0,0)])
+    decomp1 = pm.createNode('decomposeMatrix')
+    decomp2 = pm.createNode('decomposeMatrix')
 	# Take the two CVs of that, attach them by matrix/transform to the targets
-    pm.connectAttr(target_a.translate, new_link.getShape().controlPoints[0])
-    pm.connectAttr(target_b.translate, new_link.getShape().controlPoints[1])
+    pm.connectAttr(target_a.worldMatrix[0], decomp1.inputMatrix)
+    pm.connectAttr(target_b.worldMatrix[0], decomp2.inputMatrix)
+    pm.connectAttr(decomp1.outputTranslate, new_link.getShape().controlPoints[0])
+    pm.connectAttr(decomp2.outputTranslate, new_link.getShape().controlPoints[1])
 
     cl.change_colour(new_link, colour=colour)
     

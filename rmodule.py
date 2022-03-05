@@ -70,10 +70,11 @@ class RMod:
                 pos_vec = (dt.Vector(
                     self.plan[entry]['pos']) + dt.Vector(self.plan[entry]['up_plc']['pos'])
                     )
-                print(pos_vec)
                 up_placer = create_placer(pos=pos_vec, 
                     size=self.plan[entry]['up_plc']['size'],
                     colour=self.plan[entry]['up_plc']['colour'])
+
+                pm.parent(up_placer, new_placer)
                 create_link_vis(new_placer, up_placer, colour='grey')
     
         return

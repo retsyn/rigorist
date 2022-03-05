@@ -28,28 +28,30 @@ class Limb(RMod):
         # generic like 'limb' and still reference placers correctly while displaying more accurate
         # names in the viewport.
 
-
         self.plan = {
-            'base':{'pos':(0.0, 3.0, 4.0), 
+            'base':{
+                'pos':(0.0, 3.0, 4.0), 
                 'name':'base',
-                'placer':(0.4, 'white'),
-                'up_plc':{'pos':(0.0, 0.0, 1.0), 'size':0.4, 'colour':'white' },
+                'placer':(1.0, 'orange'),
+                'up_plc':{'pos':(0.0, 0.0, 7.0), 'size':0.4, 'colour':'white' },
                 'aim':'y',
                 'up':'x',
                 'child':'hinge'
             },
-            'hinge':{'pos':(0.0, 3.0, 0.0),
+            'hinge':{
+                'pos':(0.0, 3.0, 0.0),
                 'name':'hinge', 
-                'placer':(0.4, 'white'),
-                'up_plc':{'pos':(1.0, 1.0, 0.0), 'size':0.4, 'colour':'white' },
+                'placer':(1.0, 'orange'),
+                'up_plc':{'pos':(7.0, 7.0, 7.0), 'size':0.4, 'colour':'white' },
                 'aim':'y',
                 'up':'x',
                 'child':'end'
             },
-            'end':{'pos':(0.0, 3.0, -4.0),
+            'end':{
+                'pos':(0.0, 3.0, -4.0),
                 'name':'hinge', 
-                'placer':(0.4, 'white'),
-                'up_plc':{'pos':(1.0, 0.0, 0.0), 'size':0.4, 'colour':'white' },
+                'placer':(1.0, 'orange'),
+                'up_plc':{'pos':(7.0, 0.0, 0.0), 'size':0.4, 'colour':'white' },
                 'aim':'y',
                 'up':'x',
                 'child':None
