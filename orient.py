@@ -15,12 +15,12 @@ def get_vector(subject, target):
     '''
 
     subject_pos = subject.getTranslation(space='world')
-    target_pos = subject.getTranslation(space='world')
+    target_pos = target.getTranslation(space='world')
 
     aim_vector = (target_pos - subject_pos)
     aim_vector.normalize()
 
-    return normalize
+    return aim_vector
     
 
 def aim_at(subject, target, up_vector=(0.0, 0.0, 1.0), up_object=None, aim_axis=0, up_axis=2):

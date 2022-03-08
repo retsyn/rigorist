@@ -11,6 +11,7 @@ The intent is to have a class instance that always has two build phases, one for
 for construction.
 '''
 
+from distutils.command.build import build
 import pymel.core as pm
 import pymel.core.datatypes as dt
 from . placer import *
@@ -58,23 +59,32 @@ class RMod:
             print("Building {}".format(self.plan[entry]['name']))
             print("Placer is {}".format(self.plan[entry]['placer']))
 
-            new_placer = create_placer(pos=(self.plan[entry]['pos']), 
+            build_pos = self.plan[entry]['pos']
+            if('r' in self.side_prefix.lower()):
+                build_pos = (-build_pos[0], build_pos[1], build_pos[2])
+
+            new_placer = create_placer(pos=(build_pos), 
                 size=self.plan[entry]['placer'][0],
-                name=(self.plan[entry]['name'] + '_plc'), 
+                name=(self.side_prefix + self.plan[entry]['name'] + '_plc'), 
                 colour=self.plan[entry]['placer'][1]
                 )
+
+            self.plan[entry]['placer_node'] = new_placer
 
             # Create the 'up placer' which will define the up-vector when aiming to orient the 
             # future joint.
             if(self.plan[entry]['up_plc'] is not None):
-                pos_vec = (dt.Vector(
-                    self.plan[entry]['pos']) + dt.Vector(self.plan[entry]['up_plc']['pos'])
-                    )
+                
+                plc_pos = dt.Vector(self.plan[entry]['up_plc']['pos'])
+
+                if('r' in self.side_prefix.lower()):
+                    plc_pos = dt.Vector(-plc_pos[0], plc_pos[1], plc_pos[2])
+
+                pos_vec = (dt.Vector(build_pos) + plc_pos)
                 up_placer = create_placer(pos=pos_vec, 
                     size=self.plan[entry]['up_plc']['size'],
                     colour=self.plan[entry]['up_plc']['colour'])
-
-                pm.parent(up_placer, new_placer)
+                self.plan[entry]['up_plc']['placer_node'] = up_placer
                 create_link_vis(new_placer, up_placer, colour='grey')
     
         return
@@ -84,18 +94,15 @@ class RMod:
         Using the self.joint_plan, make joints, orient and parent them according to the data.
         '''
 
-        for next_joint in self.joint_plan:
-            print("Building {}".format(next_joint['name']))
-            pm.select(cl=True)
+        for entry in self.plan:
+            print("Budiling {}".format(self.plan[entry]['name']))
 
-            # Create the joint based on the name in the joint plan.
-            new_joint = pm.joint(n=(self.side_prefix + next_joint['name'] + "_joint"))
-            # Move the joint to it's placer in the joint plan.
-            pm.matchTransform(new_joint, pm.PyNode(next_joint['placer'] + '_plc'))
+            new_joint = pm.joint(n=(self.side_prefix + self.plan[entry]['name']))
+            pm.matchTransform(new_joint, self.plan[entry]['placer_node'])
             # Orient the joint by aiming at a target with a specified up-vector placer.
-            ori.aim_at(new_joint, next_joint['child_plc'], up_object=next_joint['up_plc'], 
-                aim_axis=next_joint['aim_ax'], up_axis=next_joint['up_ax'])
-
+            ori.aim_at(new_joint, self.plan[self.plan[entry]['child']]['placer_node'], 
+                up_object=self.plan[entry]['up_plc']['placer_node'], 
+                aim_axis=self.plan[entry]['aim'], up_axis=self.plan[entry]['up'])
 
     def build_module(self):
         '''

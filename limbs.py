@@ -34,8 +34,8 @@ class Limb(RMod):
                 'name':'base',
                 'placer':(1.0, 'orange'),
                 'up_plc':{'pos':(0.0, 0.0, 7.0), 'size':0.4, 'colour':'white' },
-                'aim':'y',
-                'up':'x',
+                'aim':1,
+                'up':0,
                 'child':'hinge'
             },
             'hinge':{
@@ -43,8 +43,8 @@ class Limb(RMod):
                 'name':'hinge', 
                 'placer':(1.0, 'orange'),
                 'up_plc':{'pos':(7.0, 7.0, 7.0), 'size':0.4, 'colour':'white' },
-                'aim':'y',
-                'up':'x',
+                'aim':1,
+                'up':0,
                 'child':'end'
             },
             'end':{
@@ -52,8 +52,8 @@ class Limb(RMod):
                 'name':'hinge', 
                 'placer':(1.0, 'orange'),
                 'up_plc':{'pos':(7.0, 0.0, 0.0), 'size':0.4, 'colour':'white' },
-                'aim':'y',
-                'up':'x',
+                'aim':1,
+                'up':0,
                 'child':None
             }
         }
