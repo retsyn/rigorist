@@ -37,9 +37,8 @@ class RMod:
         self.plan = {}
 
         self.dependencies = [] # Modules that must be built first.
-        self.placer_nodes = {} # Placers in-scene currently as nodes.
-        self.joint_nodes = {} # Joints in-scene currently as nodes.
         self.build_nodes = [] # Nodes in-scene built by this module.
+        self.clean_up_nodes = [] # Nodes to be quickly cleaned up after build process.
         self.reverse_axis = [] # Which axis to reverse in the case of mirroring.
 
         # If the side chosen is 'r_' then we put in a reverse axis of x.
@@ -85,8 +84,9 @@ class RMod:
                     size=self.plan[entry]['up_plc']['size'],
                     colour=self.plan[entry]['up_plc']['colour'])
                 self.plan[entry]['up_plc']['placer_node'] = up_placer
-                create_link_vis(new_placer, up_placer, colour='grey')
-    
+                link = create_link_vis(new_placer, up_placer, colour='grey')
+                self.clean_up_nodes.append(link)
+                pm.parent(up_placer, new_placer)
         return
 
     def build_joints(self):
@@ -94,39 +94,52 @@ class RMod:
         Using the self.joint_plan, make joints, orient and parent them according to the data.
         '''
 
+        last_built = None
+        pm.select(cl=True)
+
         for entry in self.plan:
             print("Budiling {}".format(self.plan[entry]['name']))
 
             new_joint = pm.joint(n=(self.side_prefix + self.plan[entry]['name']))
             pm.matchTransform(new_joint, self.plan[entry]['placer_node'])
             # Orient the joint by aiming at a target with a specified up-vector placer.
-            ori.aim_at(new_joint, self.plan[self.plan[entry]['child']]['placer_node'], 
-                up_object=self.plan[entry]['up_plc']['placer_node'], 
-                aim_axis=self.plan[entry]['aim'], up_axis=self.plan[entry]['up'])
+            self.plan[entry]['joint_node'] = new_joint
+            if(self.plan[entry]['child'] is None):
+                ori.aim_at(new_joint, 
+                    last_built, up_object=self.plan[entry]['up_plc']['placer_node'], 
+                    aim_axis=self.plan[entry]['aim'], 
+                    up_axis=self.plan[entry]['up'])
+
+            else:
+                ori.aim_at(new_joint, self.plan[self.plan[entry]['child']]['placer_node'], 
+                    up_object=self.plan[entry]['up_plc']['placer_node'], 
+                    aim_axis=self.plan[entry]['aim'], up_axis=self.plan[entry]['up'])
+
+            last_built = new_joint
+
+        return
 
     def build_module(self):
         '''
         Run through all build instructions to create this module in-scene.
         '''
 
-        # Checking that required placers are in the scene.
-        failed = False
-        print("Making sure all {} placers needed are in scene to build {} module."
-            .format(len(self.placer_list), self.name))
-        for placer in self.placer_list:
-            if(pm.objExists(self.side_prefix + placer[2] + '_plc')):
+        # This module on the generic level can't go beyond checking if everything is still in
+        # the scene.
+
+        print("Checking all vital components are still in the scene...")
+
+        for entry in self.plan:
+            if(pm.objExists(self.plan[entry]['placer_node']) and 
+            pm.objExists(self.plan[entry]['joint_node'])):
                 continue
-            else:
-                failed = True
-                print("Build module failed-- returning error info.")
-                break
-        if(failed):
-            error_msg = ("This module requires the following placers to be in the scene:")
-            for placer in self.placer_list:
-                error_msg.append("{}\n".format(placer[2]))
-            return error_msg
         else:
-            pass
+            pm.error("{} was removed from the scene.  All nodes must still exist to build the this"
+                " module".format())
+
+        print("Building module {}".format(self.name))
+
+        return
 
     def clean_placers(self):
         '''
@@ -134,10 +147,13 @@ class RMod:
         '''
 
         print("Deleting placers.")
-        for key in self.placer_nodes.keys():
-            pm.delete(self.placer_nodes[key])
 
-        self.placer_nodes = {}
+        for key in self.plan:
+            if(self.plan[key]['placer_node'] != None):
+                pm.delete(self.plan[key]['placer_node'])
+
+        for item in self.clean_up_nodes:
+            pm.delete(item)
 
         return
         
@@ -152,7 +168,7 @@ class RMod:
         '''
         When indexed, we just send back each piece of data.
         '''
-        _as_list = ([self.name, self.side_prefix, self.dir_prefix, self.placer_list, 
-            self.dependencies, self.placer_nodes])
+        _as_list = ([self.name, self.side_prefix, self.dir_prefix, self.plan, 
+            self.dependencies])
 
         return _as_list[i]

@@ -121,8 +121,9 @@ class Arms:
         self._right_arm.build_placers()
 
         # Now we need to build expressions to make placers mirror on X.
-        for key in self._left_arm.placer_nodes.keys():
-            mirror_placer(self._left_arm.placer_nodes[key], self._right_arm.placer_nodes[key])
+        for key in self._left_arm.plan:
+            mirror_placer(self._left_arm.plan[key]['placer_node'], 
+            self._right_arm.plan[key]['placer_node'])
         
     def build(self):
         '''
@@ -130,5 +131,7 @@ class Arms:
         '''
 
         print("Building both arms...")
-        self._left_arm.build_module()
-        self._right_arm.build_module()
+        self._left_arm.build_joints()
+        self._right_arm.build_joints()
+
+        return
