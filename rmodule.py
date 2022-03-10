@@ -72,7 +72,7 @@ class RMod:
 
             # Create the 'up placer' which will define the up-vector when aiming to orient the 
             # future joint.
-            if(self.plan[entry]['up_plc'] is not None):
+            if('up_plc' in self.plan[entry]):
                 
                 plc_pos = dt.Vector(self.plan[entry]['up_plc']['pos'])
 
@@ -104,18 +104,19 @@ class RMod:
             pm.matchTransform(new_joint, self.plan[entry]['placer_node'])
             # Orient the joint by aiming at a target with a specified up-vector placer.
             self.plan[entry]['joint_node'] = new_joint
-            if(self.plan[entry]['child'] is None):
-                ori.aim_at(new_joint, 
-                    last_built, up_object=self.plan[entry]['up_plc']['placer_node'], 
-                    aim_axis=self.plan[entry]['aim'], 
-                    up_axis=self.plan[entry]['up'])
-
-            else:
-                ori.aim_at(new_joint, self.plan[self.plan[entry]['child']]['placer_node'], 
-                    up_object=self.plan[entry]['up_plc']['placer_node'], 
-                    aim_axis=self.plan[entry]['aim'], up_axis=self.plan[entry]['up'])
-
             last_built = new_joint
+
+            if(self.plan[entry]['up_plc'] is not None):
+                if(self.plan[entry]['child'] is None):
+                    ori.aim_at(new_joint, 
+                        last_built, up_object=self.plan[entry]['up_plc']['placer_node'], 
+                        aim_axis=self.plan[entry]['aim'], 
+                        up_axis=self.plan[entry]['up'])
+
+                else:
+                    ori.aim_at(new_joint, self.plan[self.plan[entry]['child']]['placer_node'], 
+                        up_object=self.plan[entry]['up_plc']['placer_node'], 
+                        aim_axis=self.plan[entry]['aim'], up_axis=self.plan[entry]['up'])
 
         return
 
