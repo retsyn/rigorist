@@ -139,6 +139,9 @@ class RMod:
                 " module".format())
 
         print("Building module {}".format(self.name))
+        print("Building joints of {}.".format(self.name))
+        self.build_joints()
+        print("     ...Done.")
 
         return
 
