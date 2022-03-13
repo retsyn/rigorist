@@ -98,7 +98,7 @@ class RMod:
         pm.select(cl=True)
 
         for entry in self.plan:
-            print("Budiling {}".format(self.plan[entry]['name']))
+            print("Building {}".format(self.plan[entry]['name']))
 
             new_joint = pm.joint(n=(self.side_prefix + self.plan[entry]['name']))
             pm.matchTransform(new_joint, self.plan[entry]['placer_node'])

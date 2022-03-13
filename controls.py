@@ -5,18 +5,29 @@
 # Modified By: Matthew Riche
 
 import pymel.core as pm
+import os
+
 from . import colour as cl
+from . import file_ops as fo
 
 
 def create_control (target_position=None, shape_dict=None, rot=(0, 0, 0), name='Unnamed_Ctrl', 
-    colour='yellow', size=1):
+    colour='yellow', size=1, load_shape=None):
     '''
     Created a nurbs curve shape from a dict that contains it's knots, points, degree, and all 
     relevant attributes.
-    '''
+    '''    
 
     if(shape_dict == None):
-        pm.error("This function must be supplied a shape_dict.")
+        # If shape_dict is none, fall back on loading a shape...
+        if(load_shape is not None):
+            try:
+                shape_dict = (
+                    fo.read_from_file(fo.get_path() + '/control_shapes/' + load_shape + '.json')
+                    )
+            except:
+                pm.error("Cannot load shape .JSON.  Path may be wrong.")
+            
 
     new_handle = pm.curve(
         per=shape_dict['per'], 
@@ -52,7 +63,6 @@ def learn_curve (target_curve=None):
         target_curve = pm.ls(sl=True)[0]
 
 
-        
     # Can't pull knots from the curve node itself, gotta hook one of these up;
     curve_inf = pm.createNode('curveInfo')
     pm.connectAttr(target_curve.getShape().worldSpace, curve_inf.inputCurve)
@@ -87,3 +97,24 @@ def learn_curve (target_curve=None):
     pm.delete(curve_inf)
 
     return curve_dict
+
+
+def list_controls():
+    '''
+    Print a list of all controls available in the packed-in path.
+    '''
+
+    control_files = os.listdir(fo.get_path() + '/control_shapes/')
+
+    for control in control_files:
+        print(control)
+
+
+
+def load_control(path):
+    '''
+    Given a local path, load a control.
+    '''
+
+    pass
+

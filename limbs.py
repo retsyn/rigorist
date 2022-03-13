@@ -74,19 +74,20 @@ class Limb(RMod):
         # Select clear to disallow any automatic parenting
         pm.select(cl=True)
 
-        self.base_joint = pm.joint(n=(self.side_prefix + self.placer_list[0][2]))
-        self.hinge_joint = pm.joint(n=(self.side_prefix + self.placer_list[1][2]))
-        self.end_joint = pm.joint(n=(self.side_prefix + self.placer_list[2][2]))
 
-        pm.matchTransform(self.base_joint, self.placer_nodes['base'])
-        pm.matchTransform(self.hinge_joint, self.placer_nodes['hinge'])
-        pm.matchTransform(self.end_joint, self.placer_nodes['end'])
 
-        # We orient the shoulder joint to the hinge axis
+class IKFKLimb(Limb):
+    def __init__(self, name="C_IKFKLimb_Module", dir_prefix=''):
+        '''
+        Basic limb joints with FKIK added.
+        '''
+        super().__init__(name=name, dir_prefix=dir_prefix)
+
+
 
 
 class Arm(Limb):
-    def __init__(self, name="C_Generic_RModule", dir_prefix=''):
+    def __init__(self, name="C_Arm_Module", dir_prefix=''):
         '''
         The least most complicated limb that is still acceptable in the rigging world--
         FK/IK switch, cleanly placed pole-vector, nothing else.

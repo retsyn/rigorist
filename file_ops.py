@@ -5,7 +5,20 @@
 # Modified By: Matthew Riche
 
 import json
+import os
 import pymel.core as pm
+
+
+def get_path():
+    '''
+    Get the local path "dynamically" admid the in-progress python interpretation.
+    '''
+
+    mod_path = os.path.abspath(__file__)
+    parent_path = os.path.dirname(mod_path)
+
+    return parent_path
+
 
 def dump_to_file(dict, path):
     '''
