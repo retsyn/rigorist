@@ -51,7 +51,7 @@ def create_control (target_position=None, shape_dict=None, rot=(0, 0, 0), name='
     return new_handle
 
 
-def learn_curve (target_curve=None):
+def learn_curve(target_curve=None):
     '''
     Collect data from a curve.
     This may never get called internally.
@@ -110,11 +110,13 @@ def list_controls():
         print(control)
 
 
-
-def load_control(path):
+def prefab_control(path, colour='yellow', name='generic_CTRL'):
     '''
-    Given a local path, load a control.
+    Given a local path, load a control and add it to the scene.
     '''
 
-    pass
+    loaded_shape = fo.read_from_file(path)
+    new_control = create_control(shape_dict=loaded_shape, colour=colour, name=name)
+
+    return new_control
 

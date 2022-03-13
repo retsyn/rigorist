@@ -112,18 +112,3 @@ def aim_at(subject, target, up_vector=(0.0, 0.0, 1.0), up_object=None, aim_axis=
     subject.setMatrix(new_matrix, worldSpace=True)
 
     return
-
-
-def swap_rot_for_jo(joint_node):
-    '''
-    Swaps rotation of transform for the jointOrient values.
-    joint_node - PyNode of a joint in scene.
-    '''
-
-    jo = joint_node.jointOrient.get()
-    ro = joint_node.rotate.get()
-
-    joint_node.jointOrient.set(ro)
-    joint_node.rotate.set(jo)
-
-    return

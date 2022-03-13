@@ -16,6 +16,7 @@ import pymel.core as pm
 import pymel.core.datatypes as dt
 from . placer import *
 from . import orient as ori
+from . import controls as ctl
 
 import pprint
 
@@ -104,10 +105,11 @@ class RMod:
             pm.matchTransform(new_joint, self.plan[entry]['placer_node'])
             # Orient the joint by aiming at a target with a specified up-vector placer.
             self.plan[entry]['joint_node'] = new_joint
-            last_built = new_joint
 
-            if(self.plan[entry]['up_plc'] is not None):
-                if(self.plan[entry]['child'] is None):
+
+            if('up_plc' in self.plan[entry]):
+                if('child' not in self.plan[entry]):
+                    print("{} has no child, so aiming it at {}.".format(new_joint, last_built))
                     ori.aim_at(new_joint, 
                         last_built, up_object=self.plan[entry]['up_plc']['placer_node'], 
                         aim_axis=self.plan[entry]['aim'], 
@@ -117,6 +119,27 @@ class RMod:
                     ori.aim_at(new_joint, self.plan[self.plan[entry]['child']]['placer_node'], 
                         up_object=self.plan[entry]['up_plc']['placer_node'], 
                         aim_axis=self.plan[entry]['aim'], up_axis=self.plan[entry]['up'])
+
+            last_built = new_joint
+
+        return
+
+    def build_controls(self):
+        '''
+        Build all the control curves needed by the module and match their transforms to the 
+        joints.
+        
+        '''
+
+        for entry in self.plan:
+            if('control' in self.plan[entry]):
+                new_ctrl = ctl.create_control(load_shape=self.plan[entry]['control'][0],
+                    colour=self.plan[entry]['control'][2],
+                    name=(self.side_prefix + self.plan[entry]['name'] + "_CTRL"))
+                pm.matchTransform(new_ctrl, self.plan[entry]['joint_node'])
+                pm.scale(new_ctrl, self.plan[entry]['control'][1])
+                pm.makeIdentity(a=True, s=True)
+            self.plan[entry]['control_node'] = new_ctrl
 
         return
 
@@ -128,19 +151,12 @@ class RMod:
         # This module on the generic level can't go beyond checking if everything is still in
         # the scene.
 
-        print("Checking all vital components are still in the scene...")
-
-        for entry in self.plan:
-            if(pm.objExists(self.plan[entry]['placer_node']) and 
-            pm.objExists(self.plan[entry]['joint_node'])):
-                continue
-        else:
-            pm.error("{} was removed from the scene.  All nodes must still exist to build the this"
-                " module".format())
-
         print("Building module {}".format(self.name))
         print("Building joints of {}.".format(self.name))
         self.build_joints()
+        print("Building the controls of {}.".format(self.name))
+        self.build_controls()
+
         print("     ...Done.")
 
         return

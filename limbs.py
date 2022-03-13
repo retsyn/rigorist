@@ -36,7 +36,8 @@ class Limb(RMod):
                 'up_plc':{'pos':(0.0, 0.0, 7.0), 'size':0.4, 'colour':'white' },
                 'aim':1,
                 'up':0,
-                'child':'hinge'
+                'child':'hinge',
+                'control':('thin_ring', 1.0, 'yellow')
             },
             'hinge':{
                 'pos':(0.0, 3.0, 0.0),
@@ -45,7 +46,8 @@ class Limb(RMod):
                 'up_plc':{'pos':(7.0, 7.0, 7.0), 'size':0.4, 'colour':'white' },
                 'aim':1,
                 'up':0,
-                'child':'end'
+                'child':'end',
+                'control':('thin_ring', 0.7, 'yellow')
             },
             'end':{
                 'pos':(0.0, 3.0, -4.0),
@@ -54,7 +56,7 @@ class Limb(RMod):
                 'up_plc':{'pos':(7.0, 0.0, 0.0), 'size':0.4, 'colour':'white' },
                 'aim':1,
                 'up':0,
-                'child':None
+                'control':('thin_ring', 1.0, 'yellow')
             }
         }
 
@@ -73,16 +75,6 @@ class Limb(RMod):
 
         # Select clear to disallow any automatic parenting
         pm.select(cl=True)
-
-
-
-class IKFKLimb(Limb):
-    def __init__(self, name="C_IKFKLimb_Module", dir_prefix=''):
-        '''
-        Basic limb joints with FKIK added.
-        '''
-        super().__init__(name=name, dir_prefix=dir_prefix)
-
 
 
 
