@@ -24,10 +24,7 @@ def change_colour(node, colour='red', shape=True ):
     If shape=True, the shape node will receive colour override in addition to the trans-node.
     '''
 
-    node.overrideEnabled.set(True)
-    node.overrideColor.set(colour_enum[colour])
-    if(shape):
-        node.getShape().overrideEnabled.set(True)
-        node.getShape().overrideColor.set(colour_enum[colour])
+    node.getShape().overrideEnabled.set(True)
+    node.getShape().overrideColor.set(colour_enum[colour])
 
     return

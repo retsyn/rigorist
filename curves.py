@@ -24,19 +24,16 @@ class Curve(RMod):
                 'pos':(0.0, 3.0, 0.0), 
                 'name':'curve_base',
                 'placer':(1.0, 'blue'),
-                'child':None
             },
             'mid':{
                 'pos':(0.0, 6.0, 0.0),
                 'name':'curve_mid', 
                 'placer':(1.0, 'blue'),
-                'child':None
             },
             'end':{
                 'pos':(0.0, 9.0, 0.0),
                 'name':'curve_end', 
                 'placer':(1.0, 'blue'),
-                'child':None
             }
         }
 

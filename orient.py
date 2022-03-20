@@ -9,6 +9,20 @@ import pymel.core as pm
 import pymel.core.datatypes as dt
 
 
+def create_null(subject):
+    '''
+    Create an empty trans node, and match transform to a target,
+    Then place the target beneath it.
+    '''
+
+    null_trans = pm.createNode('transform', n=(subject.name() + '_null'))
+    pm.matchTransform(null_trans, subject)
+
+    pm.parent(subject, null_trans)
+
+    return null_trans
+
+
 def get_vector(subject, target):
     '''
     Get the vector between two objects

@@ -22,7 +22,7 @@ import pprint
 
 
 class RMod:
-    def __init__(self, name="C_Generic_RModule", dir_prefix='', mirror=False):
+    def __init__(self, name="Generic_RModule", dir_prefix='', mirror=False):
         '''
         Generic module.  Each one will know where it's placers should go, and have a rather 
         vanilla build-script
@@ -60,7 +60,7 @@ class RMod:
             print("Placer is {}".format(self.plan[entry]['placer']))
 
             build_pos = self.plan[entry]['pos']
-            if('r' in self.side_prefix.lower()):
+            if('r_' in self.side_prefix.lower()):
                 build_pos = (-build_pos[0], build_pos[1], build_pos[2])
 
             new_placer = create_placer(pos=(build_pos), 
@@ -77,7 +77,7 @@ class RMod:
                 
                 plc_pos = dt.Vector(self.plan[entry]['up_plc']['pos'])
 
-                if('r' in self.side_prefix.lower()):
+                if('r_' in self.side_prefix.lower()):
                     plc_pos = dt.Vector(-plc_pos[0], plc_pos[1], plc_pos[2])
 
                 pos_vec = (dt.Vector(build_pos) + plc_pos)
@@ -106,7 +106,6 @@ class RMod:
             # Orient the joint by aiming at a target with a specified up-vector placer.
             self.plan[entry]['joint_node'] = new_joint
 
-
             if('up_plc' in self.plan[entry]):
                 if('child' not in self.plan[entry]):
                     print("{} has no child, so aiming it at {}.".format(new_joint, last_built))
@@ -120,6 +119,8 @@ class RMod:
                         up_object=self.plan[entry]['up_plc']['placer_node'], 
                         aim_axis=self.plan[entry]['aim'], up_axis=self.plan[entry]['up'])
 
+            pm.makeIdentity(a=True)
+
             last_built = new_joint
 
         return
@@ -128,7 +129,6 @@ class RMod:
         '''
         Build all the control curves needed by the module and match their transforms to the 
         joints.
-        
         '''
 
         for entry in self.plan:

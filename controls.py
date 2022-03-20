@@ -11,6 +11,26 @@ from . import colour as cl
 from . import file_ops as fo
 
 
+def connect_trans(controller, target):
+    '''
+    Connect 1:1 the translate of a controller to a node.
+    '''
+
+    controller.translate >> target.translate
+
+    return
+
+
+def connect_rot(controller, target):
+    '''
+    Connect 1:1 the rotation of a controller to a node.
+    '''
+
+    controller.rotate >> target.rotate  
+
+    return
+
+
 def create_control (target_position=None, shape_dict=None, rot=(0, 0, 0), name='Unnamed_Ctrl', 
     colour='yellow', size=1, load_shape=None):
     '''
@@ -108,15 +128,4 @@ def list_controls():
 
     for control in control_files:
         print(control)
-
-
-def prefab_control(path, colour='yellow', name='generic_CTRL'):
-    '''
-    Given a local path, load a control and add it to the scene.
-    '''
-
-    loaded_shape = fo.read_from_file(path)
-    new_control = create_control(shape_dict=loaded_shape, colour=colour, name=name)
-
-    return new_control
 
