@@ -9,6 +9,7 @@ from . placer import mirror_placer
 from . import orient as ori
 from . import constraints as cns
 from . import controls as ctl
+from . import colour as col
 
 import pprint
 
@@ -39,17 +40,17 @@ class Limb(RMod):
                 'aim':1,
                 'up':0,
                 'child':'hinge',
-                'control':('thin_ring', 1.0, 'yellow')
+                'control':['thin_ring', 1.0, 'yellow']
             },
             'hinge':{
-                'pos':(0.0, 3.0, 0.0),
+                'pos':(0.0, 3.0, -4.0),
                 'name':'hinge', 
                 'placer':(1.0, 'orange'),
                 'up_plc':{'pos':(7.0, 7.0, 7.0), 'size':0.4, 'colour':'white' },
                 'aim':1,
                 'up':0,
                 'child':'end',
-                'control':('thin_ring', 0.7, 'yellow')
+                'control':['thin_ring', 0.7, 'yellow']
             },
             'end':{
                 'pos':(0.0, 3.0, -4.0),
@@ -58,7 +59,7 @@ class Limb(RMod):
                 'up_plc':{'pos':(7.0, 0.0, 0.0), 'size':0.4, 'colour':'white' },
                 'aim':1,
                 'up':0,
-                'control':('thin_ring', 1.0, 'yellow')
+                'control':['thin_ring', 1.0, 'yellow']
             }
         }
 
@@ -98,20 +99,27 @@ class Limb(RMod):
         IK_hinge.rename(self.side_prefix + "IK" + self.plan['hinge']['name'] + "_joint")
         IK_end.rename(self.side_prefix + "IK" + self.plan['end']['name'] + "_joint")
 
+        # Determine PV position:
+        pv_pos = ori.project_pv(IK_base, amplify=200)
+        self.pv_ctrl_node = ctl.create_control(load_shape='jack', colour='yellow',
+            name=(self.name + "PV_CTRL"))
+        self.pv_ctrl_node.translate.set(pv_pos)
+        self.pv_null = ori.create_null(self.pv_ctrl_node)
+
         # Make double constraints with switches.
         #   Make a new controller to hold the switch: 
-        FKIK_Ctrl_node = ctl.create_control(load_shape='jack', colour='white',
+        self.FKIK_ctrl_node = ctl.create_control(load_shape='jack', colour='white',
                     name=(self.side_prefix + self.name + "FKIK_CTRL"))
 
         switch_pos = pm.xform(bind_end, ws=True, q=True, t=True)
-        FKIK_Ctrl_node.translateX.set(switch_pos[0])
-        FKIK_Ctrl_node.translateY.set(bind_base.translateY.get())
+        self.FKIK_ctrl_node.translateX.set(switch_pos[0])
+        self.FKIK_ctrl_node.translateY.set(bind_base.translateY.get())
 
-        cns.make_float_switch(FK_base, IK_base, bind_base, FKIK_Ctrl_node, attr_name='FKIK', 
+        cns.make_float_switch(FK_base, IK_base, bind_base, self.FKIK_ctrl_node, attr_name='FKIK', 
             float_size=100)
-        cns.make_float_switch(FK_hinge, IK_hinge, bind_hinge, FKIK_Ctrl_node, attr_name='FKIK', 
+        cns.make_float_switch(FK_hinge, IK_hinge, bind_hinge, self.FKIK_ctrl_node, attr_name='FKIK', 
             float_size=100)
-        cns.make_float_switch(FK_end, IK_end, bind_end, FKIK_Ctrl_node, attr_name='FKIK', 
+        cns.make_float_switch(FK_end, IK_end, bind_end, self.FKIK_ctrl_node, attr_name='FKIK', 
             float_size=100)
 
         # Create the nulls for the controllers and build the hierarchy.
@@ -134,12 +142,13 @@ class Limb(RMod):
             )
         pm.matchTransform(self.IK_end_ctrl, IK_end, pos=True, rot=False)
 
-        pm.parent(self.IK_end_ctrl, FK_base, IK_base, base_null, bind_base, FKIK_Ctrl_node, 
+        pm.parent(self.IK_end_ctrl, FK_base, IK_base, base_null, bind_base, self.FKIK_ctrl_node, 
             self.IK_base_ctrl)
 
         # IK handle.
         solver_handle = pm.ikHandle(sj=IK_base, ee=IK_end, sol='ikRPsolver')[0]
         pm.parent(solver_handle, self.IK_end_ctrl)
+        pm.poleVectorConstraint(self.pv_ctrl_node, solver_handle)
 
 
         return
@@ -155,7 +164,7 @@ class Arm(Limb):
 
         self.plan['base']['pos'] = (20.0, 175.0, 0.0)
         self.plan['base']['name'] = 'shoulder'
-        self.plan['hinge']['pos'] = (28.0, 145.0, 0.0)
+        self.plan['hinge']['pos'] = (28.0, 145.0, -4.0)
         self.plan['hinge']['name'] = 'elbow'
         self.plan['end']['pos'] = (38.0, 115.0, 0.0)
         self.plan['end']['name'] = 'wrist'
@@ -164,6 +173,8 @@ class Arm(Limb):
 
     def build_module(self):
         super().build_module()
+
+        
 
         print("Arm Module built, as child of limb module.")
 
@@ -176,6 +187,14 @@ class Arms:
 
         self._left_arm = Arm("L_arm")
         self._right_arm = Arm("R_arm")
+
+        # Recolour in plan:
+        self._left_arm.plan['base']['control'][2] = 'red'
+        self._left_arm.plan['hinge']['control'][2] = 'red'
+        self._left_arm.plan['end']['control'][2] = 'red'
+        self._right_arm.plan['base']['control'][2] = 'blue'
+        self._right_arm.plan['hinge']['control'][2] = 'blue'
+        self._right_arm.plan['end']['control'][2] = 'blue'
 
         self._left_arm.build_placers()
         self._right_arm.build_placers()
@@ -191,7 +210,18 @@ class Arms:
         '''
 
         print("Building both arms...")
-        self._left_arm.build_joints()
-        self._right_arm.build_joints()
+        self._left_arm.build_module()
+        self._right_arm.build_module()
+
+        # Recolour some post-plan modules:
+        col.change_colour(self._left_arm.IK_end_ctrl, colour='red')
+        col.change_colour(self._left_arm.IK_base_ctrl, colour='red')
+        col.change_colour(self._right_arm.IK_end_ctrl, colour='blue')
+        col.change_colour(self._right_arm.IK_base_ctrl, colour='blue')
+        col.change_colour(self._left_arm.FKIK_ctrl_node, colour='pale_orange')
+        col.change_colour(self._right_arm.FKIK_ctrl_node, colour='cyan')
+
+        self._left_arm.clean_placers()
+        self._right_arm.clean_placers()
 
         return

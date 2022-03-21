@@ -23,7 +23,7 @@ def create_null(subject):
     return null_trans
 
 
-def get_vector(subject, target):
+def get_vector(subject, target, normal=True):
     '''
     Get the vector between two objects
     '''
@@ -32,10 +32,30 @@ def get_vector(subject, target):
     target_pos = target.getTranslation(space='world')
 
     aim_vector = (target_pos - subject_pos)
-    aim_vector.normalize()
+    if(normal):
+        aim_vector.normalize()
 
     return aim_vector
+
+
+def project_pv(base_joint, amplify=1.0):
+    '''
+    Given one base joint of a limb, project where the pole-vector should exist.
+    '''
     
+    hinge_joint = pm.listRelatives(base_joint, c=True)[0]
+    end_joint = pm.listRelatives(hinge_joint, c=True)[0]
+
+    hinge_pos = hinge_joint.getTranslation(space='world')
+
+    upper_vec = get_vector(base_joint, hinge_joint)
+    fore_vec = get_vector(end_joint, hinge_joint)
+
+    upper_vec *= amplify
+    fore_vec *= amplify
+
+    return (hinge_pos + (fore_vec + upper_vec))
+
 
 def aim_at(subject, target, up_vector=(0.0, 0.0, 1.0), up_object=None, aim_axis=0, up_axis=2):
     '''
